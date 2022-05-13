@@ -24,6 +24,7 @@ void loop () {
   delay(25);
   digitalWrite(LED_BUILTIN, LOW);
   delay(int(testVals[currIndex]*1000));
+  
   Serial.print("Current Delay of: ");
   Serial.println(testVals[currIndex]);
 
@@ -35,7 +36,6 @@ void loop () {
 }
 
 void flagSwitch() {
-  Serial.println("PRESSED!");
 
   if (!pressed) {
     flag = !flag;
