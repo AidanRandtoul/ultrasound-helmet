@@ -9,23 +9,21 @@
 
 const byte interruptPin = 2;
 const byte speakerPin = 6;
-unsigned int reload = 0x30D4;   // Trigger Pulse every 0.2s => 12500 cycles
-volatile int count;
+unsigned int reload = 0x30D4;   // Trigger Pulse every 0.2s => 12500
 
 unsigned long start;
 volatile float distance = -1;
 bool waiting = false;
+volatile int count = 0;
 
 ISR(TIMER1_COMPA_vect)
 {
-count++;
 pulseTrigger();
 }
 
 void setup() {
-  Serial.begin(9600);
-  pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), pulseDetected, RISING);
+  pinMode(LED_BUILTIN, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), pulseDetected, FALLING);
 
   cli();
   TCCR1A = 0;
@@ -38,6 +36,10 @@ void setup() {
 
 void loop() {
 
+  if (count == 5) {
+    distance = -1;
+  }
+  
   if (distance != -1) {
     beep();
     delay(int(distance * 1000));
@@ -53,12 +55,13 @@ void pulseTrigger() {
   
   for (int i=0; i < CYCLES; i++) {
     PORTD = PHASE1;
-    __builtin_avr_delay_cycles (200);   // Delay of 12.5us
+    __builtin_avr_delay_cycles (244);   // Delay of 15.25us
     PORTD = PHASE2;
-    __builtin_avr_delay_cycles (200);   // Delay of 12.5us
+    __builtin_avr_delay_cycles (244);   // Delay of 15.25us
   }
 
   waiting = true;
+  count++;
 }
 
 
@@ -76,16 +79,21 @@ void pulseDetected() {
   else
     time = (end + ~start) - (start + ~start);
 
-  distance = (time * 0.034) / 2;  
+  if (time < 180) {
+    return;
+  }
 
+  distance = (time * 0.00034) / 2; 
+  
   waiting = false;
+  count = 0;
 }
 
 
 // Function to trigger beeps
 void beep() {
 
-  analogWrite(speakerPin, 10);
-  delay(25);
+  analogWrite(speakerPin, 5);
+  delay(20);
   analogWrite(speakerPin, 0);
 }
